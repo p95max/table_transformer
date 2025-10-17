@@ -1,0 +1,12 @@
+services:
+  app:
+    build: ..
+    working_dir: /app
+    volumes:
+      - ..:/app:ro
+    environment:
+      - ARCGIS_FEATURE_LAYER_URL=${ARCGIS_FEATURE_LAYER_URL}
+      - ARCGIS_TOKEN=${ARCGIS_TOKEN}
+      - GSHEET_ID=${GSHEET_ID}
+      - GOOGLE_SERVICE_ACCOUNT_JSON=/app/service_account.json
+    command: ["python", "gs_transformer.py"]

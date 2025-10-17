@@ -14,7 +14,7 @@ GSHEET_WORKSHEET_NAME = os.getenv("GSHEET_WORKSHEET_NAME", "Sheet1")
 FEATURE_LAYER_URL = os.getenv("ARCGIS_FEATURE_LAYER_URL")
 TOKEN = os.getenv("ARCGIS_TOKEN")
 BATCH_SIZE = int(os.getenv("UPLOAD_BATCH_SIZE", "250"))
-DRY_RUN = os.getenv("DRY_RUN", "false").lower() in ("1", "true", "yes")
+DRY_RUN = os.getenv("DRY_RUN", "../false").lower() in ("1", "true", "yes")
 
 
 def prepare_features(df: pd.DataFrame) -> list:
@@ -109,7 +109,7 @@ def main():
     print(f"Prepared {len(features)} features")
 
     if DRY_RUN:
-        with open("prepared_features.json", "w", encoding="utf-8") as fh:
+        with open("../prepared_features.json", "w", encoding="utf-8") as fh:
             json.dump(features, fh, ensure_ascii=False, indent=2)
         print("Dry-run enabled: wrote prepared_features.json")
         return

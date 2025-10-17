@@ -48,3 +48,6 @@ tests/
 # Optional: exclude docker-compose override, local envs
 docker-compose.override.yml
 .env.local
+
+# Private google console json key
+service_account.json
