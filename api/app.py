@@ -18,14 +18,6 @@ API для публікації даних з PostGIS у форматі GeoJSON
     Скрипт використовує пул підключень psycopg2.pool.SimpleConnectionPool (блокуючий).
     Параметри підключення до БД читаються з ОЗУ або з .env:
       DATABASE_URL або PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
-
-    Використання:
-      # встановіть залежності:
-      poetry add fastapi uvicorn psycopg2-binary python-dotenv
-
-      # запустити (локально)
-      export PGHOST=localhost PGPORT=5432 PGDATABASE=transformer PGUSER=user PGPASSWORD=1111
-      uvicorn scripts.api_app:app --host 0.0.0.0 --port 8080 --workers 2
 """
 from __future__ import annotations
 import os

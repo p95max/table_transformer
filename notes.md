@@ -1,6 +1,5 @@
 # google sheets
 
-## 1.
 ### download table only
 ```bash
 poetry run python -m scripts.fetch_gs \
@@ -17,7 +16,7 @@ poetry run python -m scripts.fetch_gs \
   --table my_features \
   --batch 500
 ```  
-# 2. GeoPackage export
+# GeoPackage export for FastAPI server
 ###
 ```bash
 mkdir -p results
@@ -30,7 +29,7 @@ ogr2ogr -f GPKG results/exported_table.gpkg \
 ogrinfo results/exported_table.gpkg -so
 ```  
 
-# 3. Run test API server
+# 3. Run API server
 ## Run server
 ```bash
 poetry run uvicorn api.app:app --host 0.0.0.0 --port 8080 --workers 2
@@ -41,17 +40,14 @@ http://0.0.0.0:8080/docs#/
 
 
 
-
-
-
-
-
 # dry-run local .csv file
+```bash
 poetry run python -m scripts.transform_to_postgis \
   --input data/test_input.csv \
   --table edited_table \
   --dry-run \
   --output-dir results
+``` 
 
 
 
