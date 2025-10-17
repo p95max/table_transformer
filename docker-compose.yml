@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: transformer
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1111
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+

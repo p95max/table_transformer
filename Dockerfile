@@ -11,6 +11,6 @@ RUN apt-get update && apt-get install -y gcc libpq-dev build-essential \
     && apt-get remove -y gcc build-essential \
     && apt-get autoremove -y && apt-get clean
 
-COPY . .
+COPY docker .
 
-CMD ["python", "transformer.py"]
+CMD ["python", "transform_to_postgis.py"]
