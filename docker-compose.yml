@@ -3,14 +3,35 @@ services:
     image: postgis/postgis:15-3.4
     restart: unless-stopped
     environment:
-      POSTGRES_DB: transformer
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: 1111
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_USER}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - ARCGIS_API_KEY=${ARCGIS_API_KEY}
+      - ARCGIS_USERNAME=${ARCGIS_USERNAME}
+      - ARCGIS_PASSWORD=${ARCGIS_PASSWORD}
+      - PGHOST=db
+      - PGPORT=5432
+      - PGDATABASE=transformer
+      - PGUSER=user
+      - PGPASSWORD=${PGPASSWORD:-1111}
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "poetry run uvicorn api.app:app --host 0.0.0.0 --port 8080"
+    ports:
+      - "8080:8080"
+
 volumes:
   pgdata:
-
