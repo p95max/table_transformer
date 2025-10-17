@@ -15,6 +15,27 @@
 - Docker / docker-compose — контейнеризація сервісу і локальний PostGIS для тестування.
 - ogr2ogr (GDAL) — експорт/імпорт у формати, наприклад GeoPackage.
 
+**Ключові файли**
+
+* **README.md** — загальна інструкція з використання проекту: швидкий старт, приклади команд, опис функцій.
+* **pyproject.toml** — опис пакета та залежностей (Poetry).
+* **.env.example** — приклади змінних оточення (Postgres, Google service account, ArcGIS і т.д.).
+* **Dockerfile** — інструкції для створення Docker-образу (Python 3.12-slim).
+* **docker-compose.yml** — локальний стек для тестування: `app` + `db (PostGIS)`.
+* **scripts/fetch_gs.py** — CLI для зчитування Google Sheets через service account і збереження очищеного CSV.
+* **scripts/transform_to_postgis.py** — основний CLI: трансформація рядків у spatial features, збереження JSON/preview, вставка у PostGIS.
+* **scripts/upload_to_arcgis.py** — CLI для підготовки та завантаження features у Hosted Feature Layer ArcGIS (через arcgis або REST).
+* **api/app.py** — FastAPI-сервер для видачі GeoJSON з PostGIS та кінцевих точок (`/features.geojson`, `/feature/{id}`, `/download/gpkg`).
+* **utils/arcgis_rest.py** — утиліта для завантаження features у ArcGIS Feature Layer через REST (`addFeatures`).
+* **utils/gsheets_reader.py** — простий helper для читання Google Sheet у pandas.DataFrame (service account).
+* **data/main_data.csv** — приклад вхідних табличних даних (шаблон колонок/формат координат).
+* **results/** — каталог для вихідних файлів: підготовлені `{table}.json`, `{table}_preview.csv`, GeoPackage тощо.
+
+---
+
+Файл призначений для швидкого орієнтування у репозиторії — можна додати як `KEY_FILES.md` у корінь проєкту.
+
+
 
 ## 1. Загальна послідовність роботи:
 

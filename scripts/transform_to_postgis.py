@@ -28,7 +28,7 @@ except Exception:
     extras = None
 
 
-# Helpers for data ingestion
+# Helpers
 
 def normalize_number_str(s):
     if s is None:
@@ -223,12 +223,10 @@ def get_db_conn(db_url: Optional[str] = None):
 
 def ensure_postgis_and_table(conn, table_name: str):
     cur = conn.cursor()
-    # enable PostGIS if not exists (requires superuser in some setups; otherwise skip)
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
     except Exception:
         conn.rollback()
-    # create table if not exists (use psycopg2.sql for safe identifier substitution)
     create_sql = sql.SQL("""
     CREATE TABLE IF NOT EXISTS {tbl} (
       id SERIAL PRIMARY KEY,
@@ -248,7 +246,6 @@ def ensure_postgis_and_table(conn, table_name: str):
     except Exception:
         conn.rollback()
         raise
-    # create gist index safely
     idx_name = f"{table_name}_geom_gist"
     try:
         cur.execute(
@@ -279,15 +276,12 @@ def insert_features_bulk(conn, table_name: str, features: List[Dict], batch_size
         "i_value_6","i_value_7","i_value_8","i_value_9","i_value_10"
     ]
     cols_sql = ", ".join(cols) + ", geom"
-    # template for each row; last placeholder is WKT for ST_GeomFromText
     vals_template = "(" + ",".join(["%s"] * len(cols)) + ", ST_GeomFromText(%s, 4326))"
 
-    # Build parameterized INSERT statement with safe table identifier
     insert_sql_composed = sql.SQL("INSERT INTO {tbl} ({cols}) VALUES %s").format(
         tbl=sql.Identifier(table_name),
         cols=sql.SQL(cols_sql)
     )
-    # convert to string with proper quoting using connection
     insert_sql = insert_sql_composed.as_string(conn)
 
     rows = []
@@ -321,7 +315,6 @@ def insert_features_bulk(conn, table_name: str, features: List[Dict], batch_size
     return results
 
 
-# Orchestration / CLI
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--input", help="Local CSV input file")

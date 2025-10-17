@@ -1,17 +1,7 @@
 """
     Скрипт читає Google Sheet через service account, нормалізує дані
     (особливо перетворює десяткові коми у long/lat на крапки), зберігає
-    очищений CSV у папку results/, та опційно запускає трансформацію у PostGIS:
-      - results/from_gsheet.csv
-      - results/<table>.json
-      - results/<table>_preview.csv
-
-    Використання:
-      # тільки зберегти CSV у results/
-      poetry run python -m scripts.fetch_gs --sheet-id <SHEET_ID> --service-account ./service_account.json
-
-      # зберегти CSV і відразу запустити transform_to_postgis, результати теж у results/
-      poetry run python -m scripts.fetch_gs --sheet-id <SHEET_ID> --service-account ./service_account.json --run-transform --table my_features
+    очищений CSV у папку results/, та опційно запускає трансформацію у PostGIS
 """
 from __future__ import annotations
 import argparse

@@ -1,23 +1,6 @@
 """
-API для публікації даних з PostGIS у форматі GeoJSON
-
-Опис (укр.):
-    Простий REST API (FastAPI) для вибірки ознак з PostGIS (таблиця `my_features`),
-    підтримує:
-      - /health — перевірка сервісу
-      - /features.geojson — повертає FeatureCollection (параметри фільтрації)
-          params:
-            bbox=minx,miny,maxx,maxy    (просторовий фільтр)
-            date_from=YYYY-MM-DD
-            date_to=YYYY-MM-DD
-            region=<назва регіону>
-            limit, offset
-      - /feature/{id} — повертає одиночний Feature як GeoJSON
-      - /download/gpkg — (опційно) віддає файл results/my_features.gpkg якщо він існує
-
-    Скрипт використовує пул підключень psycopg2.pool.SimpleConnectionPool (блокуючий).
-    Параметри підключення до БД читаються з ОЗУ або з .env:
-      DATABASE_URL або PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+    API для публікації даних з PostGIS у форматі GeoJSON
+    Простий REST API (FastAPI) для вибірки ознак з PostGIS
 """
 from __future__ import annotations
 import os

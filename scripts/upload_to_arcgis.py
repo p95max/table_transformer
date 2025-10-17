@@ -28,7 +28,6 @@ def parse_args():
 
 
 def auth_gis(gis_url: str) -> GIS:
-    """Authenticate to GIS using env vars: ARCGIS_API_KEY or ARCGIS_USERNAME + ARCGIS_PASSWORD"""
     api_key = os.getenv("ARCGIS_API_KEY")
     username = os.getenv("ARCGIS_USERNAME")
     password = os.getenv("ARCGIS_PASSWORD")
@@ -81,7 +80,6 @@ def convert_to_arcgis_features(features: List[Dict[str, Any]]) -> List[Dict[str,
                 for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y", "%Y/%m/%d"):
                     try:
                         dt = datetime.strptime(d_date, fmt)
-                        # epoch ms
                         epoch_ms = int(dt.timestamp() * 1000)
                         attrs["d_date"] = epoch_ms
                         break
@@ -92,7 +90,6 @@ def convert_to_arcgis_features(features: List[Dict[str, Any]]) -> List[Dict[str,
         if lon is not None and lat is not None and not (math.isnan(lon) or math.isnan(lat)):
             geometry = {"x": lon, "y": lat, "spatialReference": {"wkid": 4326}}
         else:
-            # skip features without geometry
             print("Skipping feature with missing geometry:", attrs)
             continue
 

@@ -12,9 +12,7 @@ def upload_features_via_rest(
     sleep_between_batches: float = 0.5,
     timeout: int = 60,
 ) -> Dict:
-    """
-    Upload features to ArcGIS Feature Layer via REST addFeatures.
-    """
+
     url = feature_layer_url.rstrip("/") + "/addFeatures"
     headers = {"Accept": "application/json"}
     results = {"success": True, "batches": []}
