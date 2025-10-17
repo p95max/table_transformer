@@ -1,6 +1,9 @@
+"""
+Тести для api/app.py
+перевіряє редирект, /health, /features.geojson та /feature/{id} з фейковим пулом
+"""
 import datetime
 from fastapi.testclient import TestClient
-
 import api.app as app_module
 from api.app import app
 
