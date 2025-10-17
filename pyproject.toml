@@ -1,0 +1,16 @@
+[project]
+name = "table-transformer"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "maxx_PC",email = "m.petrykin@gmx.de"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
