@@ -66,6 +66,8 @@ python -m scripts.upload_to_arcgis \
   --item-id 90094b605df94754987b27d4b12877f9 \
   --batch 200 > results/upload_full_response.json 2>&1
 
+https://www.arcgis.com/home/webmap/viewer.html?url=https://services8.arcgis.com/KEfMfAbvB81PuRGi/arcgis/rest/services/%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%B8%D0%B9_%D1%88%D0%B0%D1%80_3/FeatureServer/0
+
 
 
 

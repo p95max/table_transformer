@@ -1,159 +1,170 @@
-# table_transformer— трансформатор табличних даних → GeoJSON / PostGIS / ArcGIS
+# Принцип роботи сервісу та основні технології
 
-## Короткий опис
+Сервіс читає табличні дані (локальний CSV або Google Sheets), нормалізує поля (координати, дати, значення), за правилом трансформації розбиває кожний рядок
+на одну або кілька точок (point features) з атрибутами і геометрією, зберігає підготовлені результати у файли (.json, preview CSV) та/або вставляє їх у PostGIS.
+За потреби підготовлені features батчами відправляються
+у Hosted Feature Layer ArcGIS через REST (addFeatures) або подаються через просте FastAPI-API у форматі GeoJSON для візуалізації на карті.
 
-`table_transformer` — невеликий універсальний інструмент на Python для автоматичної обробки табличних даних (локальний CSV або Google Sheets), перетворення кожного рядка в набір просторових об’єктів (point features) згідно з правилами ТЗ, підготовки preview-файлів та опційного завантаження у Hosted Feature Layer ArcGIS через REST (`addFeatures`). Результати також можна записати в PostGIS (PostGIS таблиця) або у файлові формати в папці `results/`.
+**Основні технології:**
+
+- Python 3.12 — мова реалізації CLI-скриптів і API.
+- pandas, gspread, google-auth — для читання та обробки таблиць і Google Sheets.
+- psycopg2 / PostGIS (PostgreSQL + PostGIS) — зберігання просторових даних (таблиці з геометрією).
+- ArcGIS API / REST (addFeatures) — завантаження даних у Hosted Feature Layer ArcGIS (опціонально).
+- FastAPI + Uvicorn — простий веб-API для видачі GeoJSON та експорту (GPKG).
+- Docker / docker-compose — контейнеризація сервісу і локальний PostGIS для тестування.
+- ogr2ogr (GDAL) — експорт/імпорт у формати, наприклад GeoPackage.
+
+
+## 1. Загальна послідовність роботи:
+
+1. Створити або використати проект у Google Cloud Console.
+2. Увімкнути Google Sheets API (і, при потребі, Google Drive API).
+3. Створити service account → згенерувати JSON ключ (`service_account.json`).
+4. Поділитися Google Sheet з email сервісного акаунту (щоб скрипт мав доступ).
+5. Підкладати `service_account.json` у проект і вказувати шлях у змінних оточення / команді.
+
+**`service_account.json`** — це приватний ключ сервісного облікового запису Google Cloud, який дозволяє скриптам (наприклад, `gspread.service_account`)
+читати приватні Google Sheets. Google API Key — це короткий ключ (рядок) для доступу до публічних API (корисно для public CSV export або деяких інших сервісів).
 
 ---
 
-## Основні можливості
+## 2. Де взяти `service_account.json`
 
-* Читання даних із:
+1. Відкрийте Google Cloud Console: [https://console.cloud.google.com](https://console.cloud.google.com)
+2. Створіть новий проект або виберіть існуючий (гору зліва — вибір проєкту).
+3. У меню зліва перейдіть **APIs & Services → Library**.
 
-  * локального CSV (`--input / -i`),
-  * публічної Google-таблиці (CSV export) (`--sheet-id` + `--gid` + `--download`),
-  * приватної Google-таблиці через service account (`--sheet-id` + `--service-account`).
-  * Трансформація рядків за правилом: `N = max(Value1..Value10)` → створити `N` записів(рядків) з одиничними індикаторами `i_value_1..i_value_10` (1/0).
-  * Підготовка `features` у форматі для PostGIS (geom WKT) та JSON для подальшого завантаження.
-  * Запис файлів у папку `results/`:
+   * Знайдіть і **Enable** (увімкніть) `Google Sheets API`.
+   * Рекомендується також увімкнути `Google Drive API`, якщо потрібно доступ до Sheets, що не є публічними за URL.
+4. Перейдіть у **APIs & Services → Credentials**.
+5. Натисніть **Create Credentials → Service account**.
 
-    * `{table}.json` — повний список підготовлених features (attributes + wkt),
-    * `{table}_preview.csv` — preview атрибутів.
-  * Опційне завантаження у ArcGIS Hosted Feature Layer через REST (по батчах).
-  * CLI-скрипти для завантаження з Google Sheets, трансформації і записи у PostGIS.
-  * Простий FastAPI-сервіс для видачі результатів у форматі GeoJSON (ендпоінт `/features.geojson`, `/feature/{id}`, `/download/gpkg`).
+   * Введіть назву (наприклад `table-transformer-sa`) та опис → **Create**.
+   * Ролі: для читання Google Sheets ролі в проєкті зазвичай не потрібні (ви не працюєте з GCP ресурсами). Можна пропустити добавлення ролей.
+6. Після створення service account в списку натисніть на нього → **Keys → Add Key → Create new key**.
+
+   * Тип ключа: **JSON** → Create.
+   * Файл автоматично буде завантажений у ваш браузер — це і є `service_account.json`. **Збережіть цей файл у безпечному місці** (не комітьте в git!).
+
+**Примітка:** Один service account має email виду `some-name@project-id.iam.gserviceaccount.com` — цей email треба використати при наданні доступу до Google Sheet.
 
 ---
 
-## Швидкий старт
+## 3. Де взяти Google API Key
 
-1. Клонувати репозиторій та перейти в папку проекту.
+API Key корисний, коли ви хочете робити запити до публічних Google API (наприклад, якщо використовуєте `export?format=csv` без авторизації) або коли бібліотека чи сервіс підтримують API key. Процедура:
 
-2. Встановити залежності (рекомендовано через Poetry):
+1. В `Google Cloud Console` → **APIs & Services → Credentials** → **Create Credentials → API key**.
+2. Система згенерує ключ у вигляді рядка. Скопіюйте його (це і є `GOOGLE_API_KEY`).
+3. **Обмеження ключа (recommended):** натисніть «Restrict key» і встановіть:
 
-```bash
-poetry install
+   * Application restrictions — HTTP referrers (web sites) або IP addresses (для сервера). Якщо використовуєте тільки локальні скрипти — можна тимчасово не ставити обмеження, але у production — обов'язково.
+   * API restrictions — оберіть Google Sheets API (або інші, які ви використовуєте).
+
+> Зверніть увагу: API Key не дає доступ до приватних Google Sheets — для цього потрібен `service_account.json` і спільний доступ файлу.
+
+---
+
+## 4. Як надати доступ service account до Google Sheet
+
+1. Відкрийте Google Sheet у браузері.
+2. Клікніть **Share** (Поділитися).
+3. В полі додавання користувачів вставте email сервісного акаунту (виглядає як `name@project-id.iam.gserviceaccount.com`). Дайте роль **Viewer** або **Editor** (для читання достатньо Viewer).
+4. Зберегти — тепер service account може читати аркуш через `gspread.service_account`.
+
+---
+
+## 5. Куди покласти файли і як задати змінні оточення
+
+1. Покладіть `service_account.json` у папку проєкту - наприклад у корінь проекту або у `secrets/`.
+2. У `.gitignore` має бути `service_account.json` (цей репозиторій має це вже).
+3. Налаштуйте файл `.env` або експортуйте змінні перед запуском.
+
+**Приклад `.env` (коротко):**
+
+```
+GOOGLE_SERVICE_ACCOUNT_JSON=./service_account.json
+GSHEET_ID=1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI
+ARCGIS_API_KEY=ВАШ_ARCGIS_API_KEY
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=transformer
+PGUSER=user
+PGPASSWORD=1111
 ```
 
-3. Підготувати `.env` (див. `.env.example`) або встановити відповідні змінні оточення.
-
-4. Запустити трансформацію локального CSV (dry-run — тільки файли в `results/`):
+**Або експортувати в shell:**
 
 ```bash
-poetry run python -m scripts.transform_to_postgis \
-  --input data/test_input.csv \
-  --table transformed_features \
-  --dry-run \
-  --output-dir results
+export GOOGLE_SERVICE_ACCOUNT_JSON=./service_account.json
+export ARCGIS_API_KEY="abc..."
 ```
 
-5. Щоб записати результат в PostGIS, вкажіть параметри підключення через `DATABASE_URL` або `PGHOST/PGUSER/PGPASSWORD/PGDATABASE` і запустіть без `--dry-run`:
+У скриптах в проєкті ви зазвичай передаєте `--service-account ./service_account.json` або робите `gspread.service_account(filename=...)`.
+
+---
+
+## 6. Основні команди
+
+**Скачати оригінал Google Sheet (через service account) та зберегти CSV:**
 
 ```bash
-poetry run python -m scripts.transform_to_postgis \
-  --input data/test_input.csv \
-  --table my_features \
-  --batch 500 \
-  --output-dir results
+poetry run python -m scripts.fetch_gs \
+  --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
+  --service-account ./service_account.json \
+  --out results/from_gsheet.csv
 ```
 
-6. Щоб скачати публічну Google-таблицю і обробити її:
+**Ті ж кроки + запустити трансформацію в таблицю PostGIS:**
 
 ```bash
-poetry run python -m scripts.transform_to_postgis \
-  --sheet-id <SHEET_ID> --gid 0 --download --table my_features
+poetry run python -m scripts.fetch_gs \
+  --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
+  --service-account ./service_account.json \
+  --run-transform --table transformed_features --batch 200
 ```
 
-7. Для приватної Google-таблиці через service account:
+**Dry-run завантаження у ArcGIS (перевірка):**
 
 ```bash
-poetry run python -m scripts.fetch_gs --sheet-id <SHEET_ID> --service-account ./service_account.json --out results/from_gsheet.csv
-# або відразу з --run-transform (викличе transform_to_postgis):
-poetry run python -m scripts.fetch_gs --sheet-id <SHEET_ID> --service-account ./service_account.json --run-transform --table my_features --batch 500
+python -m scripts.upload_to_arcgis \
+  --features results/transformed_features.json \
+  --item-id <ARC_ITEM_ID> \
+  --batch 200 --dry-run
 ```
 
----
-
-## Завантаження в ArcGIS (REST)
-
-* Завантаження виконується через `utils/arcgis_rest.py` — `upload_features_via_rest(features, feature_layer_url, token, batch_size)`.
-* Зауваження: скрипт НЕ використовує пакет `arcgis` для відправки через REST; якщо потрібна робота з ArcGIS API for Python — її можна додати окремо.
-* Приклади використання в CLI/скриптах надаються у прикладах.
-
----
-
-## API (FastAPI)
-
-У проекті є простий FastAPI-сервіс (`api.app`) для видачі даних з PostGIS у форматі GeoJSON:
-
-* `/` → редирект на `/docs` (swagger)
-* `/health` → статус сервісу
-* `/features.geojson` → повертає FeatureCollection; параметри: `bbox`, `region`, `date_from`, `date_to`, `limit`, `offset`
-* `/feature/{id}` → одиночний Feature
-* `/download/gpkg` → повертає `results/my_features.gpkg`, якщо такий експорт існує
-
-Запуск сервера:
+**Реальне завантаження в ArcGIS (перед цим встановіть ARCGIS_API_KEY):**
 
 ```bash
-poetry run uvicorn api.app:app --host 0.0.0.0 --port 8080 --workers 2
-# тоді відкрити: http://0.0.0.0:8080/docs#/
+export ARCGIS_API_KEY="ВАШ_КЛЮЧ"
+python -m scripts.upload_to_arcgis \
+  --features results/transformed_features.json \
+  --item-id <ARC_ITEM_ID> \
+  --batch 200
 ```
 
----
+## 7. Часті проблеми й рішення
 
-## Docker
+**1) `gspread.service_account` не знаходить файл**
 
-`Dockerfile` та `docker-compose.yml` в репозиторії показують базову конфігурацію для контейнеризації (образ з Python 3.12-slim, PostGIS контейнер `postgis/postgis:15-3.4` у `docker-compose`).
+* Перевірте шлях, або передавайте абсолютний шлях. Також переконайтесь, що `GOOGLE_SERVICE_ACCOUNT_JSON` встановлено.
 
-**Порада:** Docker-збірка видаляє build-інструменти після встановлення Python-залежностей — переконайтесь, що всі нативні розширення збираються під час етапу встановлення.
+**2) Service account отримує 403 при читанні Sheet**
 
----
+* Перевірте, чи правильно поділились аркушем з email service account (viewer/editor).
+* Переконайтесь, що ви відкриваєте саме той Sheet ID і Worksheet.
 
-## Структура репозиторію (важливі файли)
+**3) Дані не парсяться (коми у координатах)**
 
-* `scripts/transform_to_postgis.py` — основний CLI: читання джерела, трансформація, запис JSON/preview, вставка в PostGIS
-* `scripts/fetch_gs.py` — помічник для зчитування Google Sheets (service account)
-* `utils/arcgis_rest.py` — відправка features у ArcGIS REST `addFeatures`
-* `api/` — FastAPI-додаток для видачі GeoJSON
-* `data/` — приклади вхідних CSV (наприклад `data/test_input.csv`)
-* `results/` — каталог для вихідних файлів (створюється автоматично під час запуску)
-* `Dockerfile`, `docker-compose.yml` — для локального тестування із PostGIS
-* `.env.example` — приклад змінних середовища
+* Скрипти в проєкті нормалізують десяткові коми — але якщо є лапки/неочікувані символи - виправте в Sheets або вручну перед трансформацією.
 
----
+**4) ArcGIS: недостатньо прав для редагування шару**
 
-## Формат трансформації (правило)
-
-1. Для кожного рядка беремо колонки `Value 1..Value 10` (або локалізовані назви `Значення 1..10`).
-2. Обчислюємо `N = max(Value1..Value10)` (негативні/порожні значення трактуються як 0).
-3. Якщо `N == 0` — рядок пропускається (нічого не додаємо).
-4. Ітеруємо `i` від `0` до `N-1`, і для кожної ітерації створюємо новий feature з атрибутами `i_value_1..i_value_10`, де `i_value_k = 1` якщо `Value_k > i` інакше `0`.
-5. До атрибутів також додаються: `d_date`, `t_region`, `t_city`, `long`, `lat`.
-6. Геометрія формується як `POINT(long lat)` (WKT / PostGIS `ST_GeomFromText`), SRID = 4326.
-
-Це правило відповідає тестовому завданню ГІС‑розробника.
+* Переконайтесь, що API key має права для редагування відповідного Hosted Feature Layer. Якщо використовуєте організацію ArcGIS Online, можливо,
+потрібно поділитися елементом або додати права користувачу.
 
 ---
 
-## Нотатки по даним та очищенню
-
-* Скрипти нормалізують десяткові коми у координатах (кома → крапка) та усувають небажані пробіли.
-* Виконується пошук колонок `long`, `lat`, `date`, `region`, `city` по набору кандидатів із стійкою логікою "find_col_like" — скрипт намагається автоматично знайти відповідні назви колонок у різних мовних варіантах.
-
----
-
-## Тестування
-
-Запуск тестiв:
-```bash
-poetry run pytest -q
-``` 
-
----
-
-## Автор та контакти
-
-Автор: `maxx_PC` — [m.petrykin@gmx.de](mailto:m.petrykin@gmx.de)
-
----
+Автор: `maxx_PC` [m.petrykin@gmx.de]
 
