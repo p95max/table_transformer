@@ -3,11 +3,18 @@ name = "table-transformer"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "maxx_PC",email = "m.petrykin@gmx.de"}
+  {name = "maxx_PC", email = "m.petrykin@gmx.de"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
+
 dependencies = [
+  "python-dotenv (>=1.1.1,<2.0.0)",
+  "pandas (>=2.3.3,<3.0.0)",
+  "gspread (>=6.2.1,<7.0.0)",
+  "google-auth (>=2.41.1,<3.0.0)",
+  "requests (>=2.31.0,<3.0.0)",
+  "poetry-core (>=2.0.0)"
 ]
 
 

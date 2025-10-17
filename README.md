@@ -1,7 +1,7 @@
 Проєкт: transform_and_upload
 
 Опис:
-    Скрипт читає дані з Google Sheets, трансформує їх відповідно до технічного завдання
+    Скрипт читає дані з Google Sheets, трансформує їх 
     та завантажує як об'єкти (features) до Hosted Feature Layer в ArcGIS Online.
 
 Що робить скрипт:
