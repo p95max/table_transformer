@@ -33,10 +33,6 @@
 
 ---
 
-Файл призначений для швидкого орієнтування у репозиторії — можна додати як `KEY_FILES.md` у корінь проєкту.
-
-
-
 ## 1. Загальна послідовність роботи:
 
 1. Створити або використати проєкт у Google Cloud Console.
@@ -118,8 +114,8 @@ PGPASSWORD=1111
 **Або експортувати в shell:**
 
 ```bash
-export GOOGLE_SERVICE_ACCOUNT_JSON=./service_account.json
-export ARCGIS_API_KEY="abc..."
+    export GOOGLE_SERVICE_ACCOUNT_JSON=./service_account.json
+    export ARCGIS_API_KEY="abc..."
 ```
 
 У скриптах в проєкті ви зазвичай передаєте `--service-account ./service_account.json` або робите `gspread.service_account(filename=...)`.
@@ -131,38 +127,38 @@ export ARCGIS_API_KEY="abc..."
 **Скачати оригінал Google Sheet (через service account) та зберегти CSV:**
 
 ```bash
-poetry run python -m scripts.fetch_gs \
-  --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
-  --service-account ./service_account.json \
-  --out results/from_gsheet.csv
+    poetry run python -m scripts.fetch_gs \
+      --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
+      --service-account ./service_account.json \
+      --out results/from_gsheet.csv
 ```
 
 **Ті ж кроки + запустити трансформацію в таблицю PostGIS:**
 
 ```bash
-poetry run python -m scripts.fetch_gs \
-  --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
-  --service-account ./service_account.json \
-  --run-transform --table transformed_features --batch 200
+    poetry run python -m scripts.fetch_gs \
+      --sheet-id 1aScZXHhADfX8JW22Qr1KaBymLyDeIP2T0dt-lXkAJkI \
+      --service-account ./service_account.json \
+      --run-transform --table transformed_features --batch 200
 ```
 
 **Dry-run завантаження у ArcGIS (перевірка):**
 
 ```bash
-python -m scripts.upload_to_arcgis \
-  --features results/transformed_features.json \
-  --item-id <ARC_ITEM_ID> \
-  --batch 200 --dry-run
+    python -m scripts.upload_to_arcgis \
+      --features results/transformed_features.json \
+      --item-id <ARC_ITEM_ID> \
+      --batch 200 --dry-run
 ```
 
 **Реальне завантаження в ArcGIS (перед цим встановіть ARCGIS_API_KEY):**
 
 ```bash
-export ARCGIS_API_KEY="ВАШ_КЛЮЧ"
-python -m scripts.upload_to_arcgis \
-  --features results/transformed_features.json \
-  --item-id <ARC_ITEM_ID> \
-  --batch 200
+    export ARCGIS_API_KEY="ВАШ_КЛЮЧ"
+    python -m scripts.upload_to_arcgis \
+      --features results/transformed_features.json \
+      --item-id <ARC_ITEM_ID> \
+      --batch 200
 ```
 
 ## 7. Часті проблеми й рішення
